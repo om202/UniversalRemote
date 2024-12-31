@@ -10,122 +10,118 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
+            // Title
             Text("Samsung TV Remote")
-                .font(.largeTitle)
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.primary)
                 .padding()
             
-            TextField("Enter TV IP", text: $tvIP)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-                .keyboardType(.decimalPad)
-            
-            if isConnected {
-                Text("Connected to TV")
-                    .foregroundColor(.green)
-            } else {
-                Text("Not Connected")
-                    .foregroundColor(.red)
+            // IP Text Field
+            HStack {
+                Image(systemName: "network")
+                    .foregroundColor(.purple)
+                TextField("Enter TV IP", text: $tvIP)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.purple, lineWidth: 1)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.secondarySystemBackground)))
+                    )
             }
+            .padding([.horizontal])
             
+            // Connection Status
+            Text(isConnected ? "Connected to TV" : "Not Connected")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(isConnected ? .green : .red)
+                .padding(.top, 10)
+            
+            // Connect/Disconnect Button
             Button(action: {
                 connectToTV()
                 generator.impactOccurred()
             }) {
                 Text(isConnected ? "Reconnect to TV" : "Connect to TV")
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.purple)
+                    .background(isConnected ? Color.green : Color.indigo)
                     .foregroundColor(.white)
                     .cornerRadius(8)
             }
+            .padding([.horizontal])
             
             // Remote Controls
-            VStack(spacing: 10) {
-                HStack {
-                    Button(action: { sendCommand("KEY_POWER") }) {
-                        Text("Power")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
-                    
-                    Button(action: { sendCommand("KEY_MUTE") }) {
-                        Text("Mute")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
+            VStack(spacing: 15) {
+                // Power & Mute
+                HStack(spacing: 20) {
+                    remoteButton(title: "Power", action: { sendCommand("KEY_POWER") }, icon: "power")
+                    remoteButton(title: "Mute", action: { sendCommand("KEY_MUTE") }, icon: "speaker.slash")
                 }
                 
-                HStack {
-                    Button(action: { sendCommand("KEY_VOLUP") }) {
-                        Text("Vol +")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
-                    
-                    Button(action: { sendCommand("KEY_VOLDOWN") }) {
-                        Text("Vol -")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
+                // Volume Controls
+                HStack(spacing: 20) {
+                    remoteButton(title: "Vol +", action: { sendCommand("KEY_VOLUP") }, icon: "volume.up")
+                    remoteButton(title: "Vol -", action: { sendCommand("KEY_VOLDOWN") }, icon: "volume.down")
                 }
                 
-                HStack {
-                    Button(action: { sendCommand("KEY_CHUP") }) {
-                        Text("Ch +")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
-                    
-                    Button(action: { sendCommand("KEY_CHDOWN") }) {
-                        Text("Ch -")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
+                // Channel Controls
+                HStack(spacing: 20) {
+                    remoteButton(title: "Ch +", action: { sendCommand("KEY_CHUP") }, icon: "arrow.up")
+                    remoteButton(title: "Ch -", action: { sendCommand("KEY_CHDOWN") }, icon: "arrow.down")
                 }
                 
                 // Navigation Controls
                 VStack(spacing: 10) {
-                    Button(action: { sendCommand("KEY_UP") }) {
-                        Text("▲")
+                    remoteButton(title: "▲", action: { sendCommand("KEY_UP") })
+                    HStack(spacing: 20) {
+                        remoteButton(title: "◀", action: { sendCommand("KEY_LEFT") })
+                        remoteButton(title: "OK", action: { sendCommand("KEY_ENTER") })
+                        remoteButton(title: "▶", action: { sendCommand("KEY_RIGHT") })
                     }
-                    .buttonStyle(RemoteButtonStyle())
-                    
-                    HStack {
-                        Button(action: { sendCommand("KEY_LEFT") }) {
-                            Text("◀")
-                        }
-                        .buttonStyle(RemoteButtonStyle())
-                        
-                        Button(action: { sendCommand("KEY_ENTER") }) {
-                            Text("OK")
-                        }
-                        .buttonStyle(RemoteButtonStyle())
-                        
-                        Button(action: { sendCommand("KEY_RIGHT") }) {
-                            Text("▶")
-                        }
-                        .buttonStyle(RemoteButtonStyle())
-                    }
-                    
-                    Button(action: { sendCommand("KEY_DOWN") }) {
-                        Text("▼")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
+                    remoteButton(title: "▼", action: { sendCommand("KEY_DOWN") })
                 }
                 
-                HStack {
-                    Button(action: { sendCommand("KEY_HOME") }) {
-                        Text("Home")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
-                    
-                    Button(action: { sendCommand("KEY_RETURN") }) {
-                        Text("Back")
-                    }
-                    .buttonStyle(RemoteButtonStyle())
+                // Home & Back
+                HStack(spacing: 20) {
+                    remoteButton(title: "Home", action: { sendCommand("KEY_HOME") }, icon: "house")
+                    remoteButton(title: "Back", action: { sendCommand("KEY_RETURN") }, icon: "arrow.uturn.left")
                 }
             }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(UIColor.secondarySystemBackground))
+            )
+            .padding(.horizontal)
             
+            // Response Display
             Text("Response: \(response)")
-                .padding()
+                .font(.footnote)
                 .foregroundColor(.gray)
+                .padding()
         }
         .padding()
+        .background(Color(UIColor.systemGroupedBackground))
         .onDisappear {
             disconnectFromTV()
+        }
+    }
+    
+    func remoteButton(title: String, action: @escaping () -> Void, icon: String? = nil) -> some View {
+        Button(action: action) {
+            HStack {
+                if let icon = icon {
+                    Image(systemName: icon)
+                }
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+            }
+            .frame(width: 100, height: 50)
+            .background(Color.indigo)
+            .foregroundColor(.white)
+            .cornerRadius(8)
         }
     }
     
@@ -213,17 +209,6 @@ struct ContentView: View {
             // Continue listening
             self.receiveMessages()
         }
-    }
-}
-
-struct RemoteButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding()
-            .frame(width: 80, height: 50)
-            .background(configuration.isPressed ? Color.gray : Color.indigo)
-            .foregroundColor(.white)
-            .cornerRadius(8)
     }
 }
 
